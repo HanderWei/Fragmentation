@@ -19,6 +19,7 @@ import me.yokeyword.fragmentation.ISupportActivity;
 import me.yokeyword.fragmentation.anim.DefaultHorizontalAnimator;
 import me.yokeyword.fragmentation.anim.DefaultNoAnimator;
 import me.yokeyword.fragmentation.anim.DefaultVerticalAnimator;
+import me.yokeyword.fragmentation.anim.FragmentAnimator;
 import me.yokeyword.sample.R;
 import me.yokeyword.sample.demo_flow.adapter.HomeAdapter;
 import me.yokeyword.sample.demo_flow.base.BaseMainFragment;
@@ -53,10 +54,60 @@ public class HomeFragment extends BaseMainFragment implements Toolbar.OnMenuItem
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
-
         initView(view);
 
+        // 定制动画，或者使用onCreateFragmentAnimator()设置
+        // 定制动画需要注意，假设start的下一个Fragment有入场动画(持续时间300ms)，
+        // 为保证在动画期间HomeFragment不先hide(导致视觉上页面空白)，
+        // 需要设置和下一个Fragment enterAnim相同时间的动画(300ms)
+        FragmentAnimator defaultAnim = getFragmentAnimator();
+        defaultAnim.setExit(0);
+        defaultAnim.setEnter(0);
+        setFragmentAnimator(defaultAnim);
+
         return view;
+    }
+
+//    @Override
+//    public FragmentAnimator onCreateFragmentAnimator() {
+//        return super.onCreateFragmentAnimator();
+//    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_anim:
+                final PopupMenu popupMenu = new PopupMenu(_mActivity, mToolbar, GravityCompat.END);
+                popupMenu.inflate(R.menu.home_pop);
+                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        switch (item.getItemId()) {
+                            case R.id.action_anim_veritical:
+                                ((ISupportActivity) _mActivity).setFragmentAnimator(new DefaultVerticalAnimator());
+                                Toast.makeText(_mActivity, "设置全局动画成功! 竖向", Toast.LENGTH_SHORT).show();
+                                break;
+                            case R.id.action_anim_horizontal:
+                                ((ISupportActivity) _mActivity).setFragmentAnimator(new DefaultHorizontalAnimator());
+                                Toast.makeText(_mActivity, "设置全局动画成功! 横向", Toast.LENGTH_SHORT).show();
+                                break;
+                            case R.id.action_anim_none:
+                                ((ISupportActivity) _mActivity).setFragmentAnimator(new DefaultNoAnimator());
+                                // 这里因为HomeFragment定制了动画，故全局设定对HomeFragment是无效的
+                                // 但是因为无动画时，enterAnim的动画时间为0ms，故为HomeFragment的popExitAnim的时间也设置为0，
+                                // 否则HomeFragment在start(A)后要在300ms后才hide，导致依然可透过A点击HomeFragment的问题
+                                setFragmentAnimator(new DefaultNoAnimator());
+                                Toast.makeText(_mActivity, "设置全局动画成功! 无", Toast.LENGTH_SHORT).show();
+                                break;
+                        }
+                        popupMenu.dismiss();
+                        return true;
+                    }
+                });
+                popupMenu.show();
+                break;
+        }
+        return true;
     }
 
     private void initView(View view) {
@@ -98,38 +149,5 @@ public class HomeFragment extends BaseMainFragment implements Toolbar.OnMenuItem
         super.onNewBundle(args);
 
         Toast.makeText(_mActivity, args.getString("from"), Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public boolean onMenuItemClick(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_anim:
-                final PopupMenu popupMenu = new PopupMenu(_mActivity, mToolbar, GravityCompat.END);
-                popupMenu.inflate(R.menu.home_pop);
-                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
-                        switch (item.getItemId()) {
-                            case R.id.action_anim_veritical:
-                                ((ISupportActivity) _mActivity).setFragmentAnimator(new DefaultVerticalAnimator());
-                                Toast.makeText(_mActivity, "设置全局动画成功! 竖向", Toast.LENGTH_SHORT).show();
-                                break;
-                            case R.id.action_anim_horizontal:
-                                ((ISupportActivity) _mActivity).setFragmentAnimator(new DefaultHorizontalAnimator());
-                                Toast.makeText(_mActivity, "设置全局动画成功! 横向", Toast.LENGTH_SHORT).show();
-                                break;
-                            case R.id.action_anim_none:
-                                ((ISupportActivity) _mActivity).setFragmentAnimator(new DefaultNoAnimator());
-                                Toast.makeText(_mActivity, "设置全局动画成功! 无", Toast.LENGTH_SHORT).show();
-                                break;
-                        }
-                        popupMenu.dismiss();
-                        return true;
-                    }
-                });
-                popupMenu.show();
-                break;
-        }
-        return true;
     }
 }
